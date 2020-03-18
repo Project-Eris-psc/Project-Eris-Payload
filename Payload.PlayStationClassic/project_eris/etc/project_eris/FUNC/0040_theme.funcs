@@ -1,0 +1,103 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Project Eris Function Library - Stock UI Themes
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+overlay_folder(){
+  busybox mount -t overlay -o lowerdir="${1}":"${2}" overlay "${2}"
+}
+
+symlink_folder_files()
+{
+  # overlay does not work with all filesystems - symlink files to tmpfs to fix issue
+  cd "${2}"
+  find -mindepth 1 -type d -exec mkdir -p "${1}/{}" \;
+  find -mindepth 1 -type f -exec ln -s "${2}/{}" "${1}/{}" \;
+}
+
+select_ui_theme(){
+  echo "[PROJECT ERIS](Executing) select_ui_theme()"
+  echo 1 > "/sys/class/leds/red/brightness"
+  START=$(date +%s%N)
+  # Check for upper-case folder names and lower-case them
+  for THEME_FOLDER in $(ls -d1 "${THEMES_PATH}/"*/); do
+    THEME_FOLDER="$(basename ${THEME_FOLDER})"
+    if echo "${THEME_FOLDER}" | grep [A-Z] &> "/dev/null"; then
+      mv -f "${THEMES_PATH}/${THEME_FOLDER}" "${THEMES_PATH}/_${THEME_FOLDER}"
+      mv -f "${THEMES_PATH}/_${THEME_FOLDER}" "$(echo ${THEMES_PATH}/${THEME_FOLDER} | tr 'A-Z' 'a-z')"
+    fi
+  done
+  # Set random theme if setting is set
+  if [ "${RANDOM_THEME_ONLOAD}" = "1" ]; then
+    # prevents load th same theme twice in a row
+    LAST_THEME="${THEMES_PATH}/lastTheme"
+    [ -f "${LAST_THEME}" ] && PREV_THEME=$(cat "${LAST_THEME}")
+    SELECTED_THEME="${PREV_THEME}"
+    n="0"
+    while [ "${SELECTED_THEME}" == "${PREV_THEME}" ] && [ "${n}" -lt 3 ]; do
+      n=$((n + 1))
+      SELECTED_THEME=$(ls -d1 "${THEMES_PATH}/"*/ | sort --random-sort | head -1 | xargs basename)
+    done
+  fi
+  # Lower-case the theme variable incase it causes and issue
+  SELECTED_THEME="$(echo ${SELECTED_THEME} | tr 'A-Z' 'a-z')"
+  # Initial vars
+  FOUND_THEME=0
+  FOUND_MUSIC_FILES=0
+  if [ "${SELECTED_THEME}" != "stock" ] && [ -d "${THEMES_PATH}/${SELECTED_THEME}" ]; then
+    # Set found theme var for log
+    FOUND_THEME=1
+    # Check for the music folder
+    if [ -d "${THEMES_PATH}/${SELECTED_THEME}/music" ] && [ "${OVERRIDE_THEME_MUSIC}" = "0" ]; then
+      FOUND_MUSIC_FILES=1
+      overlay_folder "${THEMES_PATH}/${SELECTED_THEME}/music" "${SOUNDS_PATH}/music"
+    fi
+    # Set theme version of crash image	
+    if [ -f "${THEMES_PATH}/${SELECTED_THEME}/menu_files/Boot/woah.png" ]; then	
+      CRASH_IMAGE="${THEMES_PATH}/${SELECTED_THEME}/menu_files/Boot/woah.png"	
+    fi	
+		# Theme launchers	
+    if [ -d "${THEMES_PATH}/${SELECTED_THEME}/launchers" ]; then	
+      cd "${THEMES_PATH}/${SELECTED_THEME}/launchers"	
+      find -mindepth 2 -maxdepth 2 -name "*.png" | while read IMAGENAME; do	
+        if [ -e "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/launchers/${IMAGENAME}" ]; then	
+          mount -o bind "${IMAGENAME}" "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/launchers/${IMAGENAME}"	
+        fi	
+      done	
+    fi
+    overlay_folder "${THEMES_PATH}/${SELECTED_THEME}" "/usr/sony/share/data"
+    [ "${RANDOM_THEME_ONLOAD}" = "1" ] && echo "${SELECTED_THEME}" > "${LAST_THEME}"
+  fi
+  # log if stuff is found or not
+  if [ "${FOUND_THEME}" == "1" ]; then
+    echo "[PROJECT ERIS](INFO)(theme) set theme to '${SELECTED_THEME}' theme"
+  else
+    echo "[PROJECT ERIS](INFO)(theme) set theme to stock theme"
+  fi
+  if [ "${FOUND_MUSIC_FILES}" == "1" ]; then
+    echo "[PROJECT ERIS](INFO)(theme) mounting available music files"
+  else
+    echo "[PROJECT ERIS](INFO)(theme) mounting stock music files"
+  fi
+  echo 0 > "/sys/class/leds/red/brightness"
+  END=$(date +%s%N)
+  echo "[PROJECT ERIS](PROFILE) select_ui_theme() took: $(((end - start) / 1000000))ms to execute"
+  echo "[PROJECT ERIS](INFO) completed select_ui_theme()"
+}

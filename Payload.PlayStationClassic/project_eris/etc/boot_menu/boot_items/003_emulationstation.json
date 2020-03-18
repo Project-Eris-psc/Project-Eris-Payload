@@ -1,0 +1,5 @@
+{
+  "texture":"ES.png",
+  "hoverTexture":"ES_Hover.png",
+  "launchCommand":"sh /media/project_eris/opt/emulationstation/launch.sh"
+}

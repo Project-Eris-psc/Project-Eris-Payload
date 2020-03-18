@@ -1,0 +1,10 @@
+prefix=/media/project_eris/bluetooth
+exec_prefix=/media/project_eris/bluetooth
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+ 
+Name: BlueZ
+Description: Bluetooth protocol stack for Linux
+Version: 5.52
+Libs: -L${libdir} -lbluetooth
+Cflags: -I${includedir}

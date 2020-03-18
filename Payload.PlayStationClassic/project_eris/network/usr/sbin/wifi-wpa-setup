@@ -1,0 +1,48 @@
+#!/bin/sh
+
+wificonf_h(){
+  echo 'ctrl_interface=/var/run/wpa_supplicant'
+  echo 'update_config=1'
+  echo 'ap_scan=1'
+  echo 'autoscan=exponential:3:300'
+  echo
+}
+
+wificonf_d(){
+  wificonf_h
+  echo 'network={'
+  [ ! -z "${1}" ] && echo "  ssid=\"${1}\""
+  [ ! -z "${2}" ] && echo "${2}"
+  echo '}'
+}
+
+wificonf(){
+  wificonf_h
+  wpa_passphrase ${1+"$@"} | grep -Fv '#'
+}
+
+conf="/media/project_eris/network/etc/wpa_supplicant/wpa_supplicant.conf"
+
+SSID="${1}"
+if [ -z "$SSID" ]; then
+  echo "Enter your SSID (Your SSID must not include spaces):"
+  read SSID
+fi
+[ -z "$SSID" ] && exit 1
+
+PASS="${2}"
+if [ -z "$PASS" ]; then
+  echo "Enter your Wi-Fi password, leave blank for open AP:"
+  read PASS
+fi
+
+if [ "${#PASS}" -eq "0" ]; then
+  wificonf_d "$SSID" "  key_mgmt=NONE" > "$conf"
+elif [ "${#PASS}" -lt "8" ] || [ "${#PASS}" -gt "63" ]; then
+  echo "Passphrase must be 8..63 characters" 1>&2
+  exit 1
+else
+  wificonf "$SSID" "$PASS" > "$conf"
+fi
+
+echo "Details entered. You can reset your console now."

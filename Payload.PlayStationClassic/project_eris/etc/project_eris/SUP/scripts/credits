@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Credits injection script
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+source "/var/volatile/project_eris.cfg"
+[ -f "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/license/pe_head_credits.lic" ] && \
+    cat "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/license/pe_head_credits.lic" && echo
+
+if [ -f /etc/versions/pe_loader.ver ]; then
+    echo "Project Eris Bootloader installed"
+    cat /etc/versions/pe_loader.ver
+else
+    echo "Project Eris Bootloader not installed"
+fi
+echo
+
+find -L "${VOL_GAADATA}" -name "*.lic" -maxdepth 2 -exec cat {} \;
+[ -f "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/license/pe_tail_credits.lic" ] && \
+    echo && cat "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/license/pe_tail_credits.lic"

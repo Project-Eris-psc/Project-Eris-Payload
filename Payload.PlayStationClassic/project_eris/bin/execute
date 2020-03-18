@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Project Eris Bootstapper executor v1.0
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+INI_FILE="/media/project_eris/etc/project_eris/CFG/project_eris_cfg.INI"
+CFG_FILE="/var/volatile/project_eris.cfg"
+
+### LOAD CONFIGURATION ########################################################
+rm -f "${CFG_FILE}"
+grep -v -e "^;" -e "^\[" "${INI_FILE}" > "${CFG_FILE}"
+if [ -f "${CFG_FILE}" ]; then
+  source "${CFG_FILE}"
+else
+  echo "wtf" #Add a proper error at some point here...
+fi
+source "${PROJECT_ERIS_PATH}/etc/project_eris/CFG/boot_sequence.cfg"
+# Set up logging
+if [ "${RUNTIME_LOG}" = "1" ]; then
+  ERROR_LOG="${RUNTIME_LOG_PATH}/project_eris.log"
+else
+  ERROR_LOG="/dev/stdout"
+fi
+### LOAD FUNCTION LIBRARIES ###################################################                          
+for FUNCS in "/media/project_eris/etc/project_eris/FUNC/"*".funcs"; do
+  source "${FUNCS}"
+done
+### EXECUTE ###################################################################
+main(){
+  # Temp patches for folder, game manager and Boot Menu
+  if [ ! -d "/tmp/._bleemsync/etc/bleemsync" ]; then
+    mkdir -p "/tmp/._bleemsync/etc/bleemsync"
+    ln -s "${PROJECT_ERIS_PATH}/etc/project_eris/CFG" "/tmp/._bleemsync/etc/bleemsync/CFG"
+    ln -s "${PROJECT_ERIS_PATH}/etc/project_eris/THEME" "/tmp/._bleemsync/etc/bleemsync/THEME"
+    ln -s "${PROJECT_ERIS_PATH}/etc/boot_menu" "/tmp/._bleemsync/etc/boot_menu"
+    ln -s "${PROJECT_ERIS_PATH}/opt" "/tmp/._bleemsync/opt"
+  fi
+  #If the devmode flag exists. Don't bother starting anything else up.
+  if [ -f "${RUNTIME_FLAG_PATH}/DEVMODE" ]; then 
+    sdl_text "Development Mode"
+    while true; do
+      sleep 99
+    done
+  fi
+  for x in "${BOOT_SEQUENCE[@]}"; do
+    echo "[PROJECT ERIS](BOOT) booting "${x}"_func()" >> "${ERROR_LOG}"
+    TIME1=$(date +%s%N)
+    if [ ! -z $(echo "${x}" | grep "^dump_") ] && [ "${FORCE_REDUMP}" = "1" ]; then
+      ${x}"_func" --force >> "${ERROR_LOG}" 2>&1
+    else
+      ${x}"_func" >> "${ERROR_LOG}" 2>&1
+    fi
+    TIME2=$(date +%s%N)
+    echo "[PROJECT ERIS](PROFILE) "${x}"_func() took: $(((TIME1-TIME2)/1000000))ms to execute" >> "${ERROR_LOG}"
+  done 
+}
+###############################################################################
+main
+#If we get here... Panic and Reboot
+sync
+reboot
+exit 1

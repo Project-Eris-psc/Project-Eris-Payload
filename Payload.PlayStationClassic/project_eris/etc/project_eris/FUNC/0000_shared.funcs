@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Project Eris Function Library - Shared
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+pretty_logo_func(){ #ASCII PORN
+  BIN="${PROJECT_ERIS_PATH}/etc/project_eris/SUP/scripts/show_logo"
+  chmod +x "${BIN}" && "${BIN}"
+}
+
+red_led_flash() {
+  SLEEP=1
+  while true; do
+    echo 0 > "/sys/class/leds/green/brightness"
+    echo 1 > "/sys/class/leds/red/brightness"
+    sleep ${SLEEP}
+    echo 0 > "/sys/class/leds/green/brightness"
+    echo 0 > "/sys/class/leds/red/brightness"
+    sleep ${SLEEP}
+  done
+}
+
+sdl_text(){
+  TEXT_X=640
+  TEXT_Y=120
+  TEXT_SIZE=16
+  TEXT_FONT="/usr/share/fonts/ttf/LiberationMono-Regular.ttf"
+  TEXT_BG="0x7E000000"
+  if [ -f "${THEMES_PATH}/${SELECTED_THEME}/menu_files/Boot/splashscreen.png" ]; then
+    BACKGROUND="${THEMES_PATH}/${SELECTED_THEME}/menu_files/Boot/splashscreen.png"
+  else
+    BACKGROUND="${PROJECT_ERIS_PATH}/etc/project_eris/IMG/splashscreen.png"
+  fi
+  "${PROJECT_ERIS_PATH}/bin/sdl_text_display" "${1}" "${TEXT_X}" "${TEXT_Y}" "${TEXT_SIZE}" "${TEXT_FONT}" 255 255 255 "${BACKGROUND}" "${TEXT_BG}"
+}
+
+display_crash_message(){	
+	  TEXT_X=640	
+	  TEXT_Y=120	
+	  TEXT_SIZE=16	
+	  TEXT_FONT="/usr/share/fonts/ttf/LiberationMono-Regular.ttf"	
+	  TEXT_BG="0x7E000000"	
+	  [ -z "${CRASH_IMAGE}" ] && CRASH_IMAGE="${PROJECT_ERIS_PATH}/etc/project_eris/IMG/woah.png"	
+	  "${PROJECT_ERIS_PATH}/bin/sdl_text_display" "${1}" "${TEXT_X}" "${TEXT_Y}" "${TEXT_SIZE}" "${TEXT_FONT}" 255 255 255 "${CRASH_IMAGE}" "${TEXT_BG}"	
+	}

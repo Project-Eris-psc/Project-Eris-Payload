@@ -1,0 +1,5 @@
+{
+  "texture":"RA.png",
+  "hoverTexture":"RA_Hover.png",
+  "launchCommand":"launch_retroarch"
+}

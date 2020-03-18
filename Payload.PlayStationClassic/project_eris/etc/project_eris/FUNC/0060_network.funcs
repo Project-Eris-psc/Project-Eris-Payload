@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Project Eris Function Library - Networking
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+EXTRA_LIB="/media/project_eris/lib/:/media/project_eris/lib"
+
+turn_on_bt()
+{
+  sleep 2
+  echo -e 'power on' | LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EXTRA_LIB}" bluetoothctl
+}
+
+init_networking()
+{
+  WPA_PATH="/network/etc/wpa_supplicant"
+  NET_MOD_PATH="/network/lib/modules/4.4.22"
+  CFG_PATH="/etc/project_eris/CFG"
+  mount -t overlay -o lowerdir="/etc":"${PROJECT_ERIS_PATH}/network/etc" "overlay-NETWORK-etc" "/etc"
+  mount -t overlay -o lowerdir="/lib":"${PROJECT_ERIS_PATH}/network/lib" "overlay-NETWORK-lib" "/lib"
+  mount -t overlay -o lowerdir="/usr":"${PROJECT_ERIS_PATH}/network/usr" "overlay-NETWORK-etc" "/usr"
+  #Create Module folder on rootfs (script in squashfs to protect from corruption issues)
+  sh /usr/share/check_module_folder.sh
+  if [ ! -f "${PROJECT_ERIS_PATH}${WPA_PATH}/wpa_supplicant.conf" ]; then
+    cp "${PROJECT_ERIS_PATH}${WPA_PATH}/wpa_supplicant_DEFAULT.conf" "${PROJECT_ERIS_PATH}${WPA_PATH}/wpa_supplicant.conf"
+  fi
+  if [ ! -f "${PROJECT_ERIS_PATH}${NET_MOD_PATH}/modules.order" ]; then
+    cd "${PROJECT_ERIS_PATH}${NET_MOD_PATH}" 
+    find kernel/ | grep .ko > "modules.order"
+  fi
+  if [ -f "${PROJECT_ERIS_PATH}${NET_MOD_PATH}/modules.order" ]; then
+    rm "${PROJECT_ERIS_PATH}${NET_MOD_PATH}/modules.order"
+	cd "${PROJECT_ERIS_PATH}${NET_MOD_PATH}" 
+    find kernel/ | grep .ko > "modules.order"
+  fi
+  depmod -b /media/project_eris/network -a
+  cat "${PROJECT_ERIS_PATH}${CFG_PATH}/modules_to_load.cfg" | xargs -I % modprobe %
+  ip link set wlan0 up
+  if [ -f "${PROJECT_ERIS_PATH}${CFG_PATH}/ssid.cfg" ]; then
+    cat "${PROJECT_ERIS_PATH}${CFG_PATH}/ssid.cfg" | wifi-wpa-setup 
+    rm "${PROJECT_ERIS_PATH}${CFG_PATH}/ssid.cfg"
+  fi
+  systemctl restart ssh.service
+  systemctl restart telnet.socket
+  systemctl restart ftp.socket
+  LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EXTRA_LIB}" /usr/sbin/wpa_supplicant -B -Dnl80211 -iwlan0 -C/var/run/wpa_supplicant -c "${PROJECT_ERIS_PATH}${WPA_PATH}/wpa_supplicant.conf"
+  # For wired adapters
+  udhcpc -R -n -p "/var/run/udhcpc.eth0.pid" -i eth0 &
+  # For wireless adapters
+  udhcpc -R -x hostname:"${HOSTNAME}" -t 10 -n -p "/var/run/udhcpc.wlan0.pid" -i wlan0 &
+}
+
+init_bluetooth()
+{
+  chmod +x "${PROJECT_ERIS_PATH}/bluetooth/bin/"*
+  mkdir -p "/var/volatile/mount/lib/modulesw" "/var/volatile/mount/usr" "/var/volatile/mount/lib/firmware/brcm" "/var/lib/bluetooth"
+  if [ -z "$(mount | grep '\-NETWORK\-')" ]; then
+    mount -t overlay -o lowerdir="/etc":"${PROJECT_ERIS_PATH}/network/etc" "overlay-NETWORK-etc" "/etc"
+    mount -t overlay -o lowerdir="/lib":"${PROJECT_ERIS_PATH}/network/lib" "overlay-NETWORK-lib" "/lib"
+    mount -t overlay -o lowerdir="/usr":"${PROJECT_ERIS_PATH}/network/usr" "overlay-NETWORK-etc" "/usr"
+    #Create Module folder on rootfs (script in squashfs to protect from corruption issues)
+    sh /usr/share/check_module_folder.sh
+  fi
+  if [ -f "${PROJECT_ERIS_PATH}/bluetooth/connections.tar.gz" ]; then
+    cp -f "${PROJECT_ERIS_PATH}/bluetooth/connections.tar.gz" "/var/lib/bluetooth/"
+    tar -xzf "/var/lib/bluetooth/connections.tar.gz" -C "/var/lib/bluetooth/" && rm -rf "/var/lib/bluetooth/connections.tar.gz"
+  fi
+  # Partially reload DBUS configs without kicking everything off the bus
+  kill -1 $(ps | grep dbus | head -1 | awk '{ print $1 }')
+  systemctl restart bluetooth.service
+  turn_on_bt &
+}
+
+cleanup_networking()
+{
+  if [ "${ENABLE_BLUETOOTH}" = "1" ]; then
+    if [ ! -z "$(ls -A /var/lib/bluetooth/)" ]; then
+      tar -cvzf "/var/lib/bluetooth/connections.tar.gz" -C "/var/lib/bluetooth/" .
+      cp -fv "/var/lib/bluetooth/connections.tar.gz" "${PROJECT_ERIS_PATH}/bluetooth/"
+    fi
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${EXTRA_LIB}" bluetoothctl power off
+    systemctl stop bluetooth
+  fi
+  sync
+  killall wpa_supplicant &> "/dev/null"
+  umount "/lib"
+  umount "/etc"
+  umount "/usr"
+}

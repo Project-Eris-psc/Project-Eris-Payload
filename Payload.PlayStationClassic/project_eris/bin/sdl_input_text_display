@@ -1,0 +1,48 @@
+#!/bin/sh
+source "/var/volatile/project_eris.cfg"
+CONTROLLERDB="${PROJECT_ERIS_PATH}/etc/boot_menu/gamecontrollerdb.txt"
+
+if [ -z "${1}" ]; then
+  echo "usage: $0 <TEXT> <TEXTX> <TEXTY> <FONTSIZE> <FONT> <R> <G> <B> <BGIMAGEPATH> <TEXTBGCOLOR (0xAARRGGBB)>" 1>&2
+  exit 1
+fi
+
+#Process Input
+TEXT="${1}"
+TEXTX="${2}"
+TEXTY="${3}"
+FONTSIZE="${4}"
+FONT="${5}"
+COLORR="${6}"
+COLORG="${7}"
+COLORB="${8}"
+BGIMAGE="${9}"
+ONLY="${10}"
+BGCOLOR="${11}"
+TMPCOMMAND="/tmp/sdlinputdisplaycmd"
+
+#Sanitise Input
+if [ ! -z "${TEXT}" ]; then
+  [ -z "${TEXTX}" ] && TEXTX=640
+  [ -z "${TEXTY}" ] && TEXTY=120
+  [ -z "${FONTSIZE}" ] && FONTSIZE=12
+  [ -z "${FONT}" ] && FONT="/usr/share/fonts/ttf/LiberationMono-Regular.ttf"
+  [ -z "${COLORR}" ] && COLORR=255
+  [ -z "${COLORG}" ] && COLORG=255
+  [ -z "${COLORB}" ] && COLORB=255
+fi
+[ -z "${BGIMAGE}" ] && BGIMAGE="${PROJECT_ERIS_PATH}/etc/project_eris/IMG/splashscreen.png"
+
+#Create SDL DISPLAY INPUT
+echo "IMAGE	640	360	${BGIMAGE}" > ${TMPCOMMAND}
+if [ -z "${BGCOLOR}" ]; then
+  echo "FTEXT	${TEXTX}	${TEXTY}	${FONTSIZE}	${FONT}	${COLORR}	${COLORG}	${COLORB}	${TEXT}" >> ${TMPCOMMAND}
+else
+  echo "FTEXTWBG	${TEXTX}	${TEXTY}	${FONTSIZE}	${FONT}	${COLORR}	${COLORG}	${COLORB}	${BGCOLOR}	${TEXT}" >> ${TMPCOMMAND}
+fi
+
+#Execute to FrameBuffer and clean up
+SDL_VIDEODRIVER=wayland ${PROJECT_ERIS_PATH}/bin/sdl_choicedisplay -controller-db "${CONTROLLERDB}" -only ${ONLY} -file "${TMPCOMMAND}" &> "/dev/null"
+EXITCODE=$?
+rm -f "${TMPCOMMAND}"
+exit "${EXITCODE}"

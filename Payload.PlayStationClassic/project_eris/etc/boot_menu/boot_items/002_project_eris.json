@@ -1,0 +1,6 @@
+{
+  "texture":"PE.png",
+  "hoverTexture":"PE_Hover.png",
+  "launchCommand":"launch_stockui",
+  "default":true
+}

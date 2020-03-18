@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Load BS variables
+source "/var/volatile/project_eris.cfg"
+
+core="${RETROARCH_PATH}/config/retroarch/cores/${1}"
+game="${2}"
+shift
+shift
+
+mkdir -p "/tmp/ra_cache"
+CUSTOM_THEME_PATH="${PROJECT_ERIS_PATH}/opt/retroarch/config/assets/xmb/custom"
+OZONE_THEME_PATH="${PROJECT_ERIS_PATH}/opt/retroarch/config/assets/ozone"
+rm -f "${CUSTOM_THEME_PATH}/font.tff"
+[ ! -f "${CUSTOM_THEME_PATH}/font.ttf" ] && cp -f "/usr/sony/share/data/font/SSTJapanese-Regular.ttf" "${CUSTOM_THEME_PATH}/font.ttf"
+[ ! -f "${OZONE_THEME_PATH}/regular.ttf" ] && cp -f "/usr/sony/share/data/font/SSTJapanese-Regular.ttf" "${OZONE_THEME_PATH}/regular.ttf"
+[ ! -f "${OZONE_THEME_PATH}/bold.ttf" ] && cp -f "/usr/sony/share/data/font/SSTJapanese-Bold.ttf" "${OZONE_THEME_PATH}/bold.ttf"
+[ ! -f "${CUSTOM_THEME_PATH}/png/bg.png" ] && cp -f "/usr/sony/share/data/images/GR/JP_US_BG.png" "${CUSTOM_THEME_PATH}/png/bg.png"
+chmod +x "${PROJECT_ERIS_PATH}/etc/project_eris/SUP/scripts/ra_launch.sh"
+# Run RetroArch
+"${PROJECT_ERIS_PATH}/etc/project_eris/SUP/scripts/ra_launch.sh" -L "$core" -v "$@" "$game"
+# Post RetroArch run cleanup 
+rm -rf "/tmp/ra_cache"

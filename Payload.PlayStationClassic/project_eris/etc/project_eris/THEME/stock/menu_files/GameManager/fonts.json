@@ -1,0 +1,17 @@
+{
+  "DEFAULT_TEXT": {"fontPath": "LiberationSans-Regular.ttf", "r": 255, "g": 255, "b": 255},
+  "HEADER_TEXT": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "FOOTER_TEXT": {"fontPath": "Cabin-Regular.ttf", "r": 72, "g": 78, "b": 87},
+  "GENERIC_MENU_ITEM_TEXT": {"fontPath": "LiberationSans-Regular.ttf", "r": 160, "g": 160, "b": 160},
+  "GENERIC_MENU_ITEM_TEXT_ACTIVE": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "KEYBOARD_TEXT": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "KEYBOARD_LETTER": {"fontPath": "LiberationSans-Regular.ttf", "r": 160, "g": 160, "b": 160},
+  "KEYBOARD_LETTER_ACTIVE": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "NO_GAMES": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "MAIN_SCREEN_GAME_TITLE": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "MAIN_SCREEN_SUB_TEXT": {"fontPath": "LiberationSans-Bold.ttf", "r": 208, "g": 208, "b": 208},
+  "DATE_TEXT": {"fontPath": "LiberationSans-Regular.ttf", "r": 208, "g": 208, "b": 208},
+  "PUSH_BUTTON": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 255, "b": 255},
+  "RANGE_SCROLL_TEXT": {"fontPath": "LiberationSans-Regular.ttf", "r": 255, "g": 255, "b": 255},
+  "WARNING_HEADER_TEXT": {"fontPath": "LiberationSans-Bold.ttf", "r": 255, "g": 0, "b": 0}
+}

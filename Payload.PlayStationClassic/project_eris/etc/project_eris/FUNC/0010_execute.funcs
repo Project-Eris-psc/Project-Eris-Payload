@@ -1,0 +1,166 @@
+#!/bin/sh
+#
+#  Copyright 2020 ModMyClassic (https://modmyclassic.com/license)
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+###############################################################################
+# Project Eris Function Library - Execution
+# ModMyClassic.com / https://discordapp.com/invite/8gygsrw
+###############################################################################
+
+dump_emmc_func(){
+  echo "[PROJECT ERIS](Executing) dump_emmc_func()"
+  if [ ! -f "${RUNTIME_FLAG_PATH}/dumped_emmc.flag" ] || [ "${1}" = "--force" ]; then
+    echo 1 > "/sys/class/leds/red/brightness"
+    OK=1
+    MEDIAFS="$(df -T | grep -Ee ' /media$' | awk -e '{ print ${2} }')"
+    mkdir -p "${DUMP_PATH}/emmc_RAW"
+    mount -o remount,ro "/data" && mount -o remount,ro "/gaadata"
+    if [ "${MEDIAFS}" = "vfat" ]; then
+      if ! dd if="/dev/mmcblk0" bs=1M | gzip | split -a3 -b4294967295 - "${DUMP_PATH}/emmc_RAW/mmcblk0.bin.gz."; then
+        OK=0
+      fi
+    else
+      if ! dd if="/dev/mmcblk0" bs=1M | gzip > "${DUMP_PATH}/emmc_RAW/mmcblk0.bin.gz"; then
+        OK=0
+      fi
+    fi
+    if [ "${OK}" = "1" ]; then
+      touch "${RUNTIME_FLAG_PATH}/dumped_emmc.flag"
+      echo "[PROJECT ERIS](SUCCESS) dump_emmc_func()"
+    else
+      echo "[PROJECT ERIS](FAIL) dump_emmc_func()"
+    fi
+    sync
+    echo 0 > "/sys/class/leds/red/brightness"
+  else
+    echo "[PROJECT ERIS](INFO) Skipping as dump flag already present"
+  fi
+  echo "[PROJECT ERIS](Executed) dump_emmc_func()"
+}
+
+dump_fs_func(){
+  echo "[PROJECT ERIS](Executing) dump_fs_func()"
+  if [ ! -f "${RUNTIME_FLAG_PATH}/dumped_fs.flag" ] || [ "${1}" = "--force" ]; then
+    echo 1 > "/sys/class/leds/red/brightness"
+    OK=1
+    MEDIAFS="$(df -T | grep -Ee ' /media$' | awk -e '{ print ${2} }')"
+    mkdir -p "${DUMP_PATH}/emmc_FS"
+    mount -o remount,ro "/data" && mount -o remount,ro "/gaadata"
+    if [ "${MEDIAFS}" = "vfat" ]; then
+      if ! dd if="/dev/mapper/gaadata" bs=1M | gzip | split -a3 -b4294967295 - "${DUMP_PATH}/emmc_FS/gaadata.bin.gz."; then
+        OK=0
+      fi
+    else
+      if ! dd if="/dev/mapper/gaadata" bs=1M > "${DUMP_PATH}/emmc_FS/gaadata.bin"; then
+        OK=0
+      fi
+    fi
+    if ! dd if="/dev/disk/by-partlabel/USRDATA" bs=1M > "${DUMP_PATH}/emmc_FS/data.bin"; then
+      OK=0
+    fi
+    if ! dd if="/dev/disk/by-partlabel/ROOTFS1" bs=1M > "${DUMP_PATH}/emmc_FS/root.bin"; then
+      OK=0
+    fi
+    if [ "${OK}" = "1" ]; then
+      touch "${RUNTIME_FLAG_PATH}/dumped_fs.flag"
+      echo "[PROJECT ERIS](SUCCESS) dump_fs_func()"
+    else
+      echo "[PROJECT ERIS](FAIL) dump_fs_func()"
+    fi
+    mount -o remount,rw "/data"
+    sync
+    echo 0 > "/sys/class/leds/red/brightness"
+  else
+    echo "[PROJECT ERIS](INFO) Skipping as dump flag already present"
+  fi
+  echo "[PROJECT ERIS](Executed) dump_fs_func()"
+}
+
+dump_tar_func(){
+  echo "[PROJECT ERIS](Executing) dump_tar_func()"
+  if [ ! -f "${RUNTIME_FLAG_PATH}/dumped_tar.flag" ] || [ "${1}" = "--force" ]; then
+    echo 1 > "/sys/class/leds/red/brightness"
+    OK=1
+    MEDIAFS="$(df -T | grep -Ee ' /media$' | awk -e '{ print ${2} }')"
+    mkdir -p "${DUMP_PATH}/emmc_TAR"
+    mount -o remount,ro "/data" && mount -o remount,ro "/gaadata"
+    if [ "${MEDIAFS}" = "vfat" ]; then
+      if ! tar -czf - -C "/gaadata" . | split -a3 -b4294967295 - "${DUMP_PATH}/emmc_TAR/gaadata.tar.gz."; then
+        OK=0
+      fi
+    else
+      if ! tar -czf - -C "/gaadata" . > "${DUMP_PATH}/emmc_TAR/gaadata.tar.gz"; then
+        OK=0
+      fi
+    fi
+    if ! tar -czf - -C "/data" . > "${DUMP_PATH}/emmc_TAR/data.tar.gz"; then
+      OK=0
+    fi
+    mkdir -p "/tmp/root"
+    mount -o ro "/dev/disk/by-partlabel/ROOTFS1" "/tmp/root"
+    if ! tar -czf - -C "/tmp/root" . > "${DUMP_PATH}/emmc_TAR/root.tar.gz"; then
+      OK=0
+    fi
+    umount "/tmp/root"
+    rmdir "/tmp/root"
+    if [ "${OK}" = "1" ]; then
+      touch "${RUNTIME_FLAG_PATH}/dumped_tar.flag"
+      echo "[PROJECT ERIS](SUCCESS) dump_tar_func()"
+    else
+      echo "[PROJECT ERIS](FAIL) dump_tar_func()"
+    fi
+    sync
+    echo 0 > "/sys/class/leds/red/brightness"
+  else
+    echo "[PROJECT ERIS](INFO) Skipping as dump flag already present"
+  fi
+  echo "[PROJECT ERIS](Executed) dump_tar_func()"
+}
+
+dump_fstruct_func(){
+  echo "[PROJECT ERIS](Executing) dump_file_structure()"
+  if [ ! -f "${RUNTIME_FLAG_PATH}/dumped_fstruct.flag" ] || [ "${1}" = "--force" ]; then
+    echo 1 > "/sys/class/leds/red/brightness"
+    echo "Dumping file structure to: ${DUMP_PATH}/PSC_file_structure.txt"
+    echo "This might take awhile!"
+    mkdir -p "${DUMP_PATH}"
+    ls -lhAR / &> "${DUMP_PATH}/PSC_file_structure.txt"
+    [ -f "${DUMP_PATH}/PSC_file_structure.txt" ] && touch "${RUNTIME_FLAG_PATH}/dumped_fstruct.flag"
+    echo 0 > "/sys/class/leds/red/brightness"
+  else
+    echo "[PROJECT ERIS](INFO) Skipping as dump flag already present"
+  fi
+  echo "[PROJECT ERIS](Executed) dump_file_structure()"
+}
+
+debug_run_func(){
+  #Misc debugging commands get dumped here.
+  echo "[PROJECT ERIS](Executing) debug_run_func()"
+  echo 1 > "/sys/class/leds/red/brightness"
+  mkdir -p "${DUMP_PATH}"
+  mount &> "${DUMP_PATH}/mount.log"
+  [ -d "${DUMP_PATH}/DEBUG" ] && rm -rf "${DUMP_PATH}/DEBUG"
+  [ ! -d "${DUMP_PATH}/DEBUG" ] && mkdir -p "${DUMP_PATH}/DEBUG"
+  cat "/proc/mtktz/mtktscpu" | head -1 &> "${DUMP_PATH}/DEBUG/CPUTEMP.log"
+  cat "/proc/mtktz/mtktspmic" | head -1 &> "${DUMP_PATH}/DEBUG/PMICTEMP.log"
+  cat "/proc/mtktz/mtktsAP" | head -1 &> "${DUMP_PATH}/DEBUG/APTEMP.log"
+  cat "/proc/mtktz/mtktscpu" | tail -1 | grep "Tfake" | sed 's/.*/Tfake/' &> "${DUMP_PATH}/DEBUG/CPUTEMPFAKE.log"
+  cat "/proc/mtktz/mtktspmic" | tail -1 | grep "Tfake" | sed 's/.*/Tfake/' &> "${DUMP_PATH}/DEBUG/PMICTEMPFAKE.log"
+  cat "/proc/mtktz/mtktsAP" | tail -1 | grep "Tfake" | sed 's/.*/Tfake/' &> "${DUMP_PATH}/DEBUG/APTEMPFAKE.log"
+  /usr/share/misc/sony/cpu_mode &> "${DUMP_PATH}/DEBUG/cpu_mode.log"
+  echo 0 > "/sys/class/leds/red/brightness"
+  echo "[PROJECT ERIS](Executed) debug_run_func()"
+}

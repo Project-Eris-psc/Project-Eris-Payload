@@ -1,0 +1,10 @@
+[Unit]
+Description=Bluetooth OBEX service
+
+[Service]
+Type=dbus
+BusName=org.bluez.obex
+ExecStart=/media/project_eris/bluetooth/libexec/bluetooth/obexd
+
+[Install]
+Alias=dbus-org.bluez.obex.service
